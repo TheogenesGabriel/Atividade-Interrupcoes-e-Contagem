@@ -49,7 +49,7 @@ void print_leds(PIO pio, uint sm) {
 void num(uint8_t value, PIO pio, uint sm) {
     static const uint8_t segmentos[10][15] = {
         {23, 22, 21, 16, 13, 6, 3, 2, 1, 8, 11, 18, 0},     //0
-        {21, 18, 17, 13, 11, 8, 1, 0},                      //1
+        {21, 18, 17, 11, 8, 1, 0},                      //1
         {1, 2, 3, 6, 12, 18, 21, 22, 23, 0},                //2
         {1, 2, 3, 8, 11, 12, 13, 18, 21, 22, 23, 0},        //3
         {1, 8, 11, 12, 13, 16, 23, 21, 18, 0},              //4
@@ -62,17 +62,12 @@ void num(uint8_t value, PIO pio, uint sm) {
 
     clear_leds();
     for (int i = 0; segmentos[value][i] != 0; i++) {
-        set_led(segmentos[value][i], 125, 0, 0);
+        set_led(segmentos[value][i], 110, 0, 0);
     }
     print_leds(pio, sm);
 }
 
-void efect_led() {
-    for (int i = 0; i < 5; i++) {
-        gpio_put(LED_RED, i % 2);
-        sleep_ms(200);
-    }
-}
+
 
 void gpio_irq_handler(uint gpio, uint32_t events) {
     uint32_t agora = to_ms_since_boot(get_absolute_time());
@@ -107,15 +102,20 @@ int main() {
     uint sm = pio_claim_unused_sm(pio, true);
     ws2812b_program_init(pio, sm, offset, LED_PIN);
 
-    efect_led();
+    
     
     // Configura as interrupções para que seja possível fazer as rotinas de callback
     gpio_set_irq_enabled_with_callback(BTN_A, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
     gpio_set_irq_enabled_with_callback(BTN_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
+    
+    uint8_t est = 0;
+
     while (true) {
-        printf("%d\n", contador);
         num(contador, pio, sm);
-        sleep_ms(100);  // Adicionado para garantir que a CPU tenha tempo de processar as interrupções
+        est = !est;
+        gpio_put(LED_RED, est);
+        sleep_ms(200);
+         // Adicionado para garantir que a CPU tenha tempo de processar as interrupções
     }
 }
